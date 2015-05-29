@@ -69,6 +69,7 @@ public class Indexing {
             while ((line = in.readLine()) != null) {
                 if (line.length() > 0) {
                     document += line + "\n";
+                    
                 }
             }
             in.close();
