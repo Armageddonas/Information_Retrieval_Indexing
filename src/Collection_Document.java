@@ -8,10 +8,11 @@
  *
  * @author Konstantinos Chasiotis
  */
-public class Document {
+public class Collection_Document {
 
-    String Name;
+    String Title;
     int TF;
     int DocSize;
     int CTF;
+    String[] Words;
 }

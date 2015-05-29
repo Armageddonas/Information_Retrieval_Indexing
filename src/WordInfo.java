@@ -10,6 +10,6 @@
  */
 public class WordInfo {
     String Word;
-    Document[] docs;
+    Collection_Document[] docs;
     
 }

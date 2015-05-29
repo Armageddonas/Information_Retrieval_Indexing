@@ -10,25 +10,21 @@
  */
 public class TextProcessing {
 
-    static String dummy;
+    private static Stemmer stemText = new Stemmer();
+    private static StopwordRemover removeStopwords = new StopwordRemover();
 
-    public static String SanitizeText(String inputText) {
-        //Todo
-        return dummy;
+    private static String SanitizeText(String Text) {
+        String temp = Text.replaceAll("\\p{Punct}+", " ");
+
+        temp = temp.toLowerCase();
+        return temp;
     }
 
     public static String Stemmer(String inputText) {
-        //Todo
-        return dummy;
-    }
-
-    public static String toLowercase(String inputText) {
-        //Todo
-        return dummy;
+        return stemText.Run(inputText);
     }
 
     public static String RemoveStopwords(String inputText) {
-        //Todo
-        return dummy;
+        return removeStopwords.Run(inputText);
     }
 }

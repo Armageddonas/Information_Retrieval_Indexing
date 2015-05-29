@@ -59,7 +59,7 @@ public class MainGUI extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
 
-        Indexing.Run();
+        new Indexing(0).Run();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
