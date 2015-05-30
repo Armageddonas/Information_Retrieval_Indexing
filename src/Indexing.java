@@ -50,30 +50,28 @@ public class Indexing {
             InsertDocumentToDB(processedDoc);
         }
 
-        /*try {
-         //<editor-fold defaultstate="collapsed" desc="Get doc insert id">
-         ResultSet res = conn.createStatement().executeQuery("select Name from Word");
-         while (res.next()) {
-         String temp = res.getString("Name");
+        System.exit(-5);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        try {
+            //<editor-fold defaultstate="collapsed" desc="Get doc insert id">
+            ResultSet res = conn.createStatement().executeQuery("select Name from Word");
+            while (res.next()) {
+                String temp = res.getString("Name");
 
-         //<editor-fold defaultstate="collapsed" desc="Insert ctf,df">
-         PreparedStatement stmUpdateCTF = conn.prepareStatement("update Word set ctf=(select count(idWord) from WordInDoc),df=(select count(idWord) from WordInDoc) ;");
-         stmUpdateCTF.setString(1, processedDoc.Title);
+                //<editor-fold defaultstate="collapsed" desc="Insert ctf,df">
+                PreparedStatement stmUpdateCTF = conn.prepareStatement("update Word set "
+                        + " ctf=(select sum(TF) from WordInDoc where WordInDoc.idWord=Word.idWord),"
+                        + "df=(select count(idWord) from WordInDoc where WordInDoc.idWord=Word.idWord);");
+                //stmUpdateCTF.setString(1, processedDoc.Title);
 
-         stmUpdateCTF.executeUpdate();
-                
-         PreparedStatement stmUpdateDF = conn.prepareStatement("update Word set ctf=(select count(idWord) from WordInDoc),df=(select count(idWord) from WordInDoc) ;");
-         stmUpdateDF.setString(1, processedDoc.Title);
+                stmUpdateCTF.executeUpdate();
+                //</editor-fold>
+            }
+            res.close();
+            //</editor-fold>
 
-         stmUpdateDF.executeUpdate();
-         //</editor-fold>
-         }
-         res.close();
-         //</editor-fold>
-
-         } catch (SQLException ex) {
-         Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
-         }*/
+        } catch (SQLException ex) {
+            Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private void InitDatabase() {
@@ -204,7 +202,7 @@ public class Indexing {
         String[] lines = insidePreText.split("\n");
 
         processed_doc.Title = TextProcessing.SanitizeText(lines[0]);
-        for (int i = 1; i < lines.length; i++) {
+        for (int i = 0; i < lines.length; i++) {
 
             //<editor-fold defaultstate="collapsed" desc="Match text to Database">
             String bookReferences = TextProcessing.SanitizeText(lines[i]);
