@@ -13,7 +13,7 @@ public class TextProcessing {
     private static Stemmer stemText = new Stemmer();
     private static StopwordRemover removeStopwords = new StopwordRemover();
 
-    private static String SanitizeText(String Text) {
+    public static String SanitizeText(String Text) {
         String temp = Text.replaceAll("\\p{Punct}+", " ");
 
         temp = temp.toLowerCase();

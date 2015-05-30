@@ -43,12 +43,37 @@ public class Indexing {
 
         String filenames[] = GetFileNames();
 
-        //for (int i = 0; i < filenames.length; i++) {
-        for (int i = 2241; i < 2243; i++) {//debug
+        for (int i = 0; i < filenames.length; i++) {
+            //for (int i = 2241; i < 2243; i++) {//debug
             String doc = LoadDocument(collectionPath + filenames[i]);
             Collection_Document processedDoc = ProccessDocument(doc);
             InsertDocumentToDB(processedDoc);
         }
+
+        /*try {
+         //<editor-fold defaultstate="collapsed" desc="Get doc insert id">
+         ResultSet res = conn.createStatement().executeQuery("select Name from Word");
+         while (res.next()) {
+         String temp = res.getString("Name");
+
+         //<editor-fold defaultstate="collapsed" desc="Insert ctf,df">
+         PreparedStatement stmUpdateCTF = conn.prepareStatement("update Word set ctf=(select count(idWord) from WordInDoc),df=(select count(idWord) from WordInDoc) ;");
+         stmUpdateCTF.setString(1, processedDoc.Title);
+
+         stmUpdateCTF.executeUpdate();
+                
+         PreparedStatement stmUpdateDF = conn.prepareStatement("update Word set ctf=(select count(idWord) from WordInDoc),df=(select count(idWord) from WordInDoc) ;");
+         stmUpdateDF.setString(1, processedDoc.Title);
+
+         stmUpdateDF.executeUpdate();
+         //</editor-fold>
+         }
+         res.close();
+         //</editor-fold>
+
+         } catch (SQLException ex) {
+         Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
+         }*/
     }
 
     private void InitDatabase() {
@@ -170,7 +195,6 @@ public class Indexing {
         //<editor-fold defaultstate="collapsed" desc="Extract text inside <pre>">
         Matcher extractPre = Pattern.compile("<pre>\n(.*(.|\\s)*)<\\/pre>").matcher(doc);
         if (extractPre.find()) {
-            System.out.println("The content is:\n" + extractPre.group(1) + "\n------------------------------------------------------");
             insidePreText = extractPre.group(1);
         }
             //</editor-fold>
@@ -207,13 +231,14 @@ public class Indexing {
             //</editor-fold>
 
             //If a book reference is encountered break
-            Matcher RgxBookReferences = Pattern.compile("CA[0-9]{6}").matcher(bookReferences);
+            Matcher RgxBookReferences = Pattern.compile("[C|c][A|a][0-9]{6}").matcher(bookReferences);
             if (RgxBookReferences.find()) {
                 break;
             }
 
         }
         //</editor-fold>
+        //System.out.println("The content is:\n" + extractPre.group(1) + "\n------------------------------------------------------");
         System.out.println(processed_doc.toString());
         return processed_doc;
     }
@@ -222,10 +247,10 @@ public class Indexing {
 
         try {
             int docID;
+            int wordID;
 
             //<editor-fold defaultstate="collapsed" desc="Insert document">
-            PreparedStatement prep = conn.prepareStatement(
-                    "insert into Document(Title,DocLength) values (?,?);");
+            PreparedStatement prep = conn.prepareStatement("insert into Document(Title,DocLength) values (?,?);");
 
             prep.setString(1, processedDoc.Title);
             prep.setInt(2, processedDoc.Words.size());
@@ -241,20 +266,56 @@ public class Indexing {
 
             //<editor-fold defaultstate="collapsed" desc="Insert values in Word and WordInDoc">
             for (int i = 0; i < processedDoc.Words.size(); i++) {
-                //Word
-                PreparedStatement stmWord = conn.prepareStatement(
-                        "insert into Word(Name) values (?);");
+                //<editor-fold defaultstate="collapsed" desc="Check if word is in database">
+                PreparedStatement stmWordInDB = conn.prepareStatement("select idWord from word WordInDoc where Name=?");
 
-                stmWord.setString(1, processedDoc.Words.get(i));
-                stmWord.executeUpdate();
+                stmWordInDB.setString(1, processedDoc.Words.get(i));
+                ResultSet rtsWordInDB = stmWordInDB.executeQuery();
 
-                //WordInDoc
+                //</editor-fold>                
+                if (rtsWordInDB.next() == false) {
+
+                    //<editor-fold defaultstate="collapsed" desc="Insert word">
+                    PreparedStatement stmWord = conn.prepareStatement(
+                            "insert into Word(Name) values (?);");
+
+                    stmWord.setString(1, processedDoc.Words.get(i));
+                    stmWord.executeUpdate();
+                    //</editor-fold>
+
+                    //<editor-fold defaultstate="collapsed" desc="Get word insert id">
+                    ResultSet rtsWordID = conn.createStatement().executeQuery("select last_insert_rowid() as id");
+                    rtsWordID.next();
+                    wordID = rtsWordID.getInt("id");
+                    rtsWordID.close();
+                    //</editor-fold>
+                } else {
+                    //<editor-fold defaultstate="collapsed" desc="Check if word is in current document">
+                    PreparedStatement stmWordInCurDoc = conn.prepareStatement(""
+                            + "select Word.idWord from word, Document, WordInDoc WordInDoc "
+                            + "where WordInDoc.idDocument=Document.idDocument and WordInDoc.idWord and Word.idWord and Name=? and Document.idDocument=?");
+
+                    stmWordInCurDoc.setString(1, processedDoc.Words.get(i));
+                    stmWordInCurDoc.setInt(2, docID);
+                    ResultSet rtsWordInCurDoc = stmWordInCurDoc.executeQuery();
+                    if (rtsWordInCurDoc.next() == true) {
+                        continue;
+                    }
+                    //</editor-fold>  
+
+                    //System.out.println("Dublicate: " + processedDoc.Words.get(i));
+                    wordID = rtsWordInDB.getInt("idWord");
+                }
+
+                //<editor-fold defaultstate="collapsed" desc="WordInDoc">
                 PreparedStatement stmWordInDoc = conn.prepareStatement(
-                        "insert into WordInDoc(idWord,idDocument,TF) values (last_insert_rowid(),?,?);");
+                        "insert into WordInDoc(idWord,idDocument,TF) values (?,?,?);");
 
-                stmWordInDoc.setInt(1, docID);
-                stmWordInDoc.setInt(2, processedDoc.CalcTF(processedDoc.Words.get(i)));
+                stmWordInDoc.setInt(1, wordID);
+                stmWordInDoc.setInt(2, docID);
+                stmWordInDoc.setInt(3, processedDoc.CalcTF(processedDoc.Words.get(i)));
                 stmWordInDoc.executeUpdate();
+                //</editor-fold>
             }
             //</editor-fold>
         } catch (SQLException ex) {
