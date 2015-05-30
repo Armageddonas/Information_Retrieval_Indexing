@@ -9,5 +9,5 @@
  * @author Konstantinos Chasiotis
  */
 public class Main {
-    TestIng
+    
 }
