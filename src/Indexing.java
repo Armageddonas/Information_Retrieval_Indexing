@@ -69,7 +69,7 @@ public class Indexing {
             while ((line = in.readLine()) != null) {
                 if (line.length() > 0) {
                     document += line + "\n";
-                    
+
                 }
             }
             in.close();
@@ -77,39 +77,55 @@ public class Indexing {
             Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
-        System.out.println(document);
+        //System.out.println(document);
         return document;
     }
 
     private Collection_Document ProccessDocument(String doc) {
         Collection_Document processed_doc = new Collection_Document();
+        String insidePreText = null;
 
-        //<editor-fold defaultstate="collapsed" desc="Get text only (inside pre)">
-        String pattern = "<pre>\n(.*)";
+        //<editor-fold defaultstate="collapsed" desc="Extract text inside <pre>">
+        Matcher extractPre = Pattern.compile("<pre>(.*(.|\\s)*)<\\/pre>").matcher(doc);
+        if (extractPre.find()) {
+            System.out.println("The content is:" + extractPre.group(1) + "\n------------------------------------------------------");
+            insidePreText = extractPre.group(1);
+        }
+            //</editor-fold>
+        //System.exit(-1);
 
-        Pattern r = Pattern.compile(pattern);
+        //<editor-fold defaultstate="collapsed" desc="Extract text line by line">
+        Matcher RgxExtractLines = Pattern.compile("(?m)(.*)").matcher(insidePreText);
 
-        // Now create matcher object.
-        Matcher m = r.matcher(doc);
-        if (m.find()) {
-            System.out.println("The title is: " + m.group(0));
+        //<editor-fold defaultstate="collapsed" desc="Extract title">
+        if (RgxExtractLines.find()) {
+            System.out.println("The title is: " + RgxExtractLines.group(1));
+            //processed_doc.Title = extractPre.group(0);
         } else {
-            System.out.println("NO MATCH");
+            System.out.println("Title not found");
+            //System.out.println("The content is:" + insidePreText);
+        }
+
+        //</editor-fold>
+        while (RgxExtractLines.find()) {
+            String bookReferences = RgxExtractLines.group(1);
+
+            //If a book reference is encountered break
+            Matcher RgxBookReferences = Pattern.compile("CA[0-9]{6}").matcher(bookReferences);
+            if (RgxBookReferences.find()) {
+                break;
+            } //<editor-fold defaultstate="collapsed" desc="Save words">
+            else {
+                Matcher RgxGetWords = Pattern.compile("[a-zA-Z|0-9]*").matcher(bookReferences);
+                while (RgxGetWords.find()) {
+                    processed_doc.Words.add(RgxGetWords.group());
+                }
+            }
+            //</editor-fold>
         }
         //</editor-fold>
-        
-        
-        
-        // String to be scanned to find the pattern.
-        /*String line = "This order was placed for QT3000! OK?";
-         String pattern = "(.*)(\\d+)(.*)";
-
-         // Create a Pattern object
-         Pattern r = Pattern.compile(pattern);
-
-         // Now create matcher object.
-         Matcher m = r.matcher(line);*/
-        return null;
+        System.out.println(processed_doc.toString());
+        return processed_doc;
     }
 
     private void InsertDocumentToDB() {
