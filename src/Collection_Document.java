@@ -1,3 +1,6 @@
+
+import java.util.ArrayList;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -14,5 +17,11 @@ public class Collection_Document {
     int TF;
     int DocSize;
     int CTF;
-    String[] Words;
+    ArrayList<String> Words=new ArrayList();
+
+    @Override
+    public String toString() {
+        return "Collection_Document{" + "Title=" + Title + ", Words=" + Words + '}';
+    }
+           
 }

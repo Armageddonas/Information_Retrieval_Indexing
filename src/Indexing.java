@@ -27,6 +27,23 @@ public class Indexing {
     final String dbPath = "databases/";
     final String collectionPath = "collection/";
 
+    public Indexing(int database) {
+        dbName = "index" + database;
+    }
+
+    public void Run() {
+        InitDatabase();
+
+        String filenames[] = GetFileNames();
+
+        //for (int i = 0; i < filenames.length; i++) {
+        for (int i = 2242; i < 2243; i++) {//debug
+            String doc = LoadDocument(collectionPath + filenames[i]);
+            ProccessDocument(doc);
+            InsertDocumentToDB();
+        }
+    }
+
     private void InitDatabase() {
 
         //<editor-fold defaultstate="collapsed" desc="if the directory does not exist, create it">
@@ -86,42 +103,38 @@ public class Indexing {
         String insidePreText = null;
 
         //<editor-fold defaultstate="collapsed" desc="Extract text inside <pre>">
-        Matcher extractPre = Pattern.compile("<pre>(.*(.|\\s)*)<\\/pre>").matcher(doc);
+        Matcher extractPre = Pattern.compile("<pre>\n(.*(.|\\s)*)<\\/pre>").matcher(doc);
         if (extractPre.find()) {
-            System.out.println("The content is:" + extractPre.group(1) + "\n------------------------------------------------------");
+            System.out.println("The content is:\n" + extractPre.group(1) + "\n------------------------------------------------------");
             insidePreText = extractPre.group(1);
         }
             //</editor-fold>
         //System.exit(-1);
 
         //<editor-fold defaultstate="collapsed" desc="Extract text line by line">
-        Matcher RgxExtractLines = Pattern.compile("(?m)(.*)").matcher(insidePreText);
+        String[] lines = insidePreText.split("\n");
+        /*for (int i = 0; i < lines.length; i++) {
+         System.out.println("line"+i+" "+lines[i]+"\n");
+         }*/
+        processed_doc.Title = lines[0];
+        for (int i = 1; i < lines.length; i++) {
 
-        //<editor-fold defaultstate="collapsed" desc="Extract title">
-        if (RgxExtractLines.find()) {
-            System.out.println("The title is: " + RgxExtractLines.group(1));
-            //processed_doc.Title = extractPre.group(0);
-        } else {
-            System.out.println("Title not found");
-            //System.out.println("The content is:" + insidePreText);
-        }
-
-        //</editor-fold>
-        while (RgxExtractLines.find()) {
-            String bookReferences = RgxExtractLines.group(1);
-
+            String bookReferences = lines[i];
+            
+            //<editor-fold defaultstate="collapsed" desc="Save words">
+            Matcher RgxGetWords = Pattern.compile("[a-zA-Z|0-9]+").matcher(bookReferences);
+            while (RgxGetWords.find()) {
+                //System.out.println("Word: " + RgxGetWords.group());
+                processed_doc.Words.add(RgxGetWords.group());
+            }
+            //</editor-fold>
+            
             //If a book reference is encountered break
             Matcher RgxBookReferences = Pattern.compile("CA[0-9]{6}").matcher(bookReferences);
             if (RgxBookReferences.find()) {
                 break;
-            } //<editor-fold defaultstate="collapsed" desc="Save words">
-            else {
-                Matcher RgxGetWords = Pattern.compile("[a-zA-Z|0-9]*").matcher(bookReferences);
-                while (RgxGetWords.find()) {
-                    processed_doc.Words.add(RgxGetWords.group());
-                }
-            }
-            //</editor-fold>
+            } 
+
         }
         //</editor-fold>
         System.out.println(processed_doc.toString());
@@ -130,10 +143,6 @@ public class Indexing {
 
     private void InsertDocumentToDB() {
 
-    }
-
-    public Indexing(int database) {
-        dbName = "index" + database;
     }
 
     private String[] GetFileNames() {
@@ -150,24 +159,6 @@ public class Indexing {
             }
         }
         return filenames;
-    }
-
-    public void Run() {
-        InitDatabase();
-
-        String filenames[] = GetFileNames();
-
-        //for (int i = 0; i < filenames.length; i++) {
-        for (int i = 0; i < 1; i++) {//debug
-            String doc = LoadDocument(collectionPath + filenames[i]);
-            ProccessDocument(doc);
-            InsertDocumentToDB();
-        }
-    }
-
-    public String[] loadUrls() {
-
-        return null;
     }
 
     public WordInfo indexOf(String Word) {
