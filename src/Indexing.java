@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -66,6 +67,7 @@ public class Indexing {
             String doc = LoadDocument(collectionPath + filenames[i]);
             Collection_Document processedDoc = ProccessDocument(doc);
             InsertDocumentToDB(processedDoc);
+            System.gc();
         }
 
         //System.exit(-5);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -117,7 +119,9 @@ public class Indexing {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath + dbName + ".db");
             //Gain speed
-            conn.prepareStatement("PRAGMA synchronous=OFF;").execute();
+            //conn.prepareStatement("PRAGMA synchronous=OFF;").execute();
+            conn.prepareStatement("PRAGMA journal_mode = MEMORY;").execute();
+            //conn.commit();
             //<editor-fold defaultstate="collapsed" desc="Create tables">
             Statement stat = conn.createStatement();
             stat.execute("  CREATE TABLE Word (\n"
@@ -175,16 +179,23 @@ public class Indexing {
 
     private String LoadDocument(String filepath) {
 
-        ArrayList<Integer> relDocs = new ArrayList();
         String document = "";
         try {
 
             BufferedReader in = new BufferedReader(new FileReader(filepath));
             String line;
+            boolean flagPre = false;
             while ((line = in.readLine()) != null) {
                 if (line.length() > 0) {
-                    document += line + "\n";
-
+                    if (flagPre == false && line.equals("<pre>")) {
+                        flagPre = true;
+                        continue;
+                    } else if (flagPre == true && line.equals("</pre>")) {
+                        break;
+                    }
+                    if (flagPre == true) {
+                        document += line + "\n";
+                    }
                 }
             }
             in.close();
@@ -198,64 +209,57 @@ public class Indexing {
 
     private Collection_Document ProccessDocument(String doc) {
         Collection_Document processed_doc = new Collection_Document();
-        String insidePreText = null;
-
-        //<editor-fold defaultstate="collapsed" desc="Extract text inside <pre>">
-        Matcher extractPre = Pattern.compile("<pre>\n(.*(.|\\s)*)<\\/pre>").matcher(doc);
-        if (extractPre.find()) {
-            insidePreText = extractPre.group(1);
-        }
-            //</editor-fold>
-        //System.exit(-1);
-
+        String insidePreText = doc;
+        
         //<editor-fold defaultstate="collapsed" desc="Extract text line by line">
         String[] lines = insidePreText.split("\n");
-
         processed_doc.Title = TextProcessing.SanitizeText(lines[0]);
-        for (int i = 0; i < lines.length; i++) {
+        {
+            for (int i = 0; i < lines.length; i++) {
 
-            //<editor-fold defaultstate="collapsed" desc="Match text to Database">
-            String bookReferences = lines[i];
-            lines[i] = TextProcessing.SanitizeText(lines[i]);
+                //<editor-fold defaultstate="collapsed" desc="Match text to Database">
+                String bookReferences = lines[i];
+                lines[i] = TextProcessing.SanitizeText(lines[i]);
 
-            switch (database) {
-                case 0: {
-                    break;
+                switch (database) {
+                    case 0: {
+                        break;
+                    }
+                    case 1: {
+                        lines[i] = TextProcessing.Stemmer(lines[i]);
+                        break;
+                    }
+                    case 2: {
+                        lines[i] = TextProcessing.RemoveStopwords(lines[i]);
+                        break;
+                    }
+                    case 3: {
+                        lines[i] = TextProcessing.RemoveStopwords(lines[i]);
+                        lines[i] = TextProcessing.Stemmer(lines[i]);
+                        break;
+                    }
+                    default: {
+                        System.out.println("Wrong database number");
+                        System.exit(-3);
+                        break;
+                    }
                 }
-                case 1: {
-                    lines[i] = TextProcessing.Stemmer(lines[i]);
-                    break;
-                }
-                case 2: {
-                    lines[i] = TextProcessing.RemoveStopwords(lines[i]);
-                    break;
-                }
-                case 3: {
-                    lines[i] = TextProcessing.RemoveStopwords(lines[i]);
-                    lines[i] = TextProcessing.Stemmer(lines[i]);
-                    break;
-                }
-                default: {
-                    System.out.println("Wrong database number");
-                    System.exit(-3);
-                    break;
-                }
-            }
             //</editor-fold>
 
-            //<editor-fold defaultstate="collapsed" desc="Save words">
-            Matcher RgxGetWords = Pattern.compile("[a-zA-Z|0-9]+").matcher(lines[i]);
-            while (RgxGetWords.find()) {
-                processed_doc.Words.add(RgxGetWords.group());
-            }
+                //<editor-fold defaultstate="collapsed" desc="Save words">
+                Matcher RgxGetWords = Pattern.compile("[A-Za-z|0-9]+").matcher(lines[i]);
+                while (RgxGetWords.find()) {
+                    processed_doc.Words.add(RgxGetWords.group());
+                }
             //</editor-fold>
 
-            //If a book reference is encountered break
-            Matcher RgxBookReferences = Pattern.compile("[C|c][A|a][0-9]{6}").matcher(bookReferences);
-            if (RgxBookReferences.find()) {
-                break;
-            }
+                //If a book reference is encountered break
+                Matcher RgxBookReferences = Pattern.compile("ca[0-9]{6}").matcher(bookReferences.toLowerCase());
+                if (RgxBookReferences.find()) {
+                    break;
+                }
 
+            }
         }
         //</editor-fold>
         //System.out.println("The content is:\n" + extractPre.group(1) + "\n------------------------------------------------------");
