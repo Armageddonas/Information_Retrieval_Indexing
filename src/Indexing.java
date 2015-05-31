@@ -34,6 +34,11 @@ public class Indexing {
     final String dbPath = "databases/";
     final String collectionPath = "collection/";
     Connection conn = null;
+    PreparedStatement stmWordInCurDoc;
+    PreparedStatement prep;
+    PreparedStatement stmWordInDB;
+    PreparedStatement stmWord;
+    PreparedStatement stmWordInDoc;
 
     public Indexing(int database) {
         dbName = "index" + database;
@@ -148,6 +153,24 @@ public class Indexing {
             System.exit(0);
         }
         System.out.println("Opened database successfully");
+
+        try {
+            //<editor-fold defaultstate="collapsed" desc="Init prepared statements">
+            stmWordInCurDoc = conn.prepareStatement(""
+                    + "select Word.idWord from word, Document, WordInDoc WordInDoc "
+                    + "where WordInDoc.idDocument=Document.idDocument and WordInDoc.idWord=Word.idWord and Name=? and Document.idDocument=?");
+
+            prep = conn.prepareStatement("insert into Document(Title,DocLength) values (?,?);");
+            stmWordInDB = conn.prepareStatement("select idWord from word WordInDoc where Name=?");
+            stmWord = conn.prepareStatement(
+                    "insert into Word(Name) values (?);");
+            stmWordInDoc = conn.prepareStatement(
+                    "insert into WordInDoc(idWord,idDocument,TF) values (?,?,?);");
+
+//</editor-fold>
+        } catch (SQLException ex) {
+            Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     private String LoadDocument(String filepath) {
@@ -247,8 +270,6 @@ public class Indexing {
             int wordID;
 
             //<editor-fold defaultstate="collapsed" desc="Insert document">
-            PreparedStatement prep = conn.prepareStatement("insert into Document(Title,DocLength) values (?,?);");
-
             prep.setString(1, processedDoc.Title);
             prep.setInt(2, processedDoc.Words.size());
             prep.executeUpdate();
@@ -264,7 +285,6 @@ public class Indexing {
             //<editor-fold defaultstate="collapsed" desc="Insert values in Word and WordInDoc">
             for (int i = 0; i < processedDoc.Words.size(); i++) {
                 //<editor-fold defaultstate="collapsed" desc="Check if word is in database">
-                PreparedStatement stmWordInDB = conn.prepareStatement("select idWord from word WordInDoc where Name=?");
 
                 stmWordInDB.setString(1, processedDoc.Words.get(i));
                 ResultSet rtsWordInDB = stmWordInDB.executeQuery();
@@ -273,9 +293,6 @@ public class Indexing {
                 if (rtsWordInDB.next() == false) {
 
                     //<editor-fold defaultstate="collapsed" desc="Insert word">
-                    PreparedStatement stmWord = conn.prepareStatement(
-                            "insert into Word(Name) values (?);");
-
                     stmWord.setString(1, processedDoc.Words.get(i));
                     stmWord.executeUpdate();
                     //</editor-fold>
@@ -287,26 +304,14 @@ public class Indexing {
                     rtsWordID.close();
                     //</editor-fold>
                 } else {
-                    //<editor-fold defaultstate="collapsed" desc="Check if word is in current document">
-                    PreparedStatement stmWordInCurDoc = conn.prepareStatement(""
-                            + "select Word.idWord from word, Document, WordInDoc WordInDoc "
-                            + "where WordInDoc.idDocument=Document.idDocument and WordInDoc.idWord=Word.idWord and Name=? and Document.idDocument=?");
-
-                    stmWordInCurDoc.setString(1, processedDoc.Words.get(i));
-                    stmWordInCurDoc.setInt(2, docID);
-                    ResultSet rtsWordInCurDoc = stmWordInCurDoc.executeQuery();
-                    if (rtsWordInCurDoc.next() == true) {
+                    if (WordInDoc(processedDoc.Words.get(i), docID) == true) {
                         continue;
                     }
-                    //</editor-fold> 
                     //System.out.println("Dublicate: " + processedDoc.Words.get(i));
                     wordID = rtsWordInDB.getInt("idWord");
                 }
 
                 //<editor-fold defaultstate="collapsed" desc="WordInDoc">
-                PreparedStatement stmWordInDoc = conn.prepareStatement(
-                        "insert into WordInDoc(idWord,idDocument,TF) values (?,?,?);");
-
                 stmWordInDoc.setInt(1, wordID);
                 stmWordInDoc.setInt(2, docID);
                 stmWordInDoc.setInt(3, processedDoc.CalcTF(processedDoc.Words.get(i)));
@@ -317,6 +322,24 @@ public class Indexing {
         } catch (SQLException ex) {
             Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private boolean WordInDoc(String word, int docID) {
+        try {
+            //<editor-fold defaultstate="collapsed" desc="Check if word is in current document">
+
+            stmWordInCurDoc.setString(1, word);
+            stmWordInCurDoc.setInt(2, docID);
+            ResultSet rtsWordInCurDoc = stmWordInCurDoc.executeQuery();
+
+            if (rtsWordInCurDoc.next()) {
+                return true;
+            }
+            //</editor-fold> 
+        } catch (SQLException ex) {
+            Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
     }
 
     private String[] GetFileNames() {
