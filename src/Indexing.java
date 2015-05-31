@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JProgressBar;
 
 
 /*
@@ -29,6 +30,7 @@ public class Indexing {
 
     String dbName;
     int database;
+    JProgressBar prBar = null;
     final String dbPath = "databases/";
     final String collectionPath = "collection/";
     Connection conn = null;
@@ -38,13 +40,23 @@ public class Indexing {
         this.database = database;
     }
 
+    public Indexing(int database, JProgressBar prBar) {
+        dbName = "index" + database;
+        this.database = database;
+        this.prBar = prBar;
+    }
+
     public void Run() {
         InitDatabase();
 
         String filenames[] = GetFileNames();
 
+        prBar.setMaximum(filenames.length + filenames.length / 6);
         for (int i = 0; i < filenames.length; i++) {
             //for (int i = 0; i < 400; i++) {//debug
+            if (prBar != null) {
+                prBar.setValue(i);
+            }
             System.out.println("Database: " + database + " Document " + (i + 1) + "\tof " + filenames.length);
             String doc = LoadDocument(collectionPath + filenames[i]);
             Collection_Document processedDoc = ProccessDocument(doc);
@@ -63,6 +75,7 @@ public class Indexing {
             stmUpdateCTF.executeUpdate();
             //</editor-fold>
 
+            prBar.setMaximum(filenames.length);
         } catch (SQLException ex) {
             Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
         }

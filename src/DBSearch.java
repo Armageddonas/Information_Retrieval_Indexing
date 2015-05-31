@@ -42,12 +42,11 @@ public class DBSearch {
         try {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath + dbName + ".db");
-            //Gain speed
         } catch (Exception e) {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }
-        System.out.println("Opened database successfully");
+        System.out.println("Opened database " + dbName + ".db" + " successfully");
         return true;
     }
 
@@ -65,11 +64,9 @@ public class DBSearch {
                 break;
             }
             case 2: {
-                Keyword = TextProcessing.RemoveStopwords(Keyword);
                 break;
             }
             case 3: {
-                Keyword = TextProcessing.RemoveStopwords(Keyword);
                 Keyword = TextProcessing.Stemmer(Keyword);
                 break;
             }
@@ -80,8 +77,7 @@ public class DBSearch {
             }
         }
         //</editor-fold>
-
-        System.out.println(Keyword);
+        
         try {
             //<editor-fold defaultstate="collapsed" desc="Find ctf and df">
             PreparedStatement stmDfCTF = conn.prepareStatement("select ctf, df from word where Name=?");
@@ -92,23 +88,27 @@ public class DBSearch {
                 results += "CTF: " + rtsDfCTF.getInt("ctf") + "\t";
                 results += "DF: " + rtsDfCTF.getInt("df") + "\n";
             } else {
+                Logger.getLogger(DBSearch.class.getName()).log(Level.SEVERE, null, new Exception("Fuck"));
                 return "Keyword not found";
             }
             //</editor-fold>    
 
             //<editor-fold defaultstate="collapsed" desc="Find Tilte,DocLenght and tf">
-            PreparedStatement stmDocs = conn.prepareStatement("select Title, DocLength, TF from Word, WordInDoc, Document "
+            PreparedStatement stmDocs = conn.prepareStatement("select Title, DocLength, TF, Document.idDocument from Word, WordInDoc, Document "
                     + "where WordInDoc.idDocument=Document.idDocument and WordInDoc.idWord=Word.idWord and Name=?");
 
             stmDocs.setString(1, Keyword);
             ResultSet rtsDocs = stmDocs.executeQuery();
             while (rtsDocs.next()) {
+                results += "-----------------------------------------------------------------------------------------------------------------------------------\n";
                 results += "Tilte " + "\t";
-                results += rtsDocs.getString("Title") + "\t";
+                results += rtsDocs.getString("Title") + "\n";
                 results += "DocLenght " + "\t";
-                results += rtsDocs.getString("DocLength") + "\t";
+                results += rtsDocs.getString("DocLength") + "\n";
                 results += "TF " + "\t";
                 results += rtsDocs.getInt("TF") + "\n";
+                results += "ID " + "\t";
+                results += rtsDocs.getInt("idDocument") + "\n";
             }
             //</editor-fold>                
         } catch (SQLException ex) {
