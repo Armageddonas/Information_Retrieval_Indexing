@@ -14,6 +14,8 @@ import java.util.Date;
  */
 public class MainGUI extends javax.swing.JFrame {
 
+    static DBSearch search = new DBSearch();
+
     /**
      * Creates new form MainGUI
      */
@@ -31,6 +33,14 @@ public class MainGUI extends javax.swing.JFrame {
     private void initComponents() {
 
         jButton1 = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        txtArResults = new javax.swing.JTextArea();
+        txtfSearch = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
+        chbStem = new javax.swing.JCheckBox();
+        chbStopwords = new javax.swing.JCheckBox();
+        btnSearch = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -41,21 +51,85 @@ public class MainGUI extends javax.swing.JFrame {
             }
         });
 
+        txtArResults.setColumns(20);
+        txtArResults.setRows(5);
+        jScrollPane1.setViewportView(txtArResults);
+
+        jLabel1.setText("Keywords");
+
+        chbStem.setText("Stem words");
+        chbStem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chbStemActionPerformed(evt);
+            }
+        });
+
+        chbStopwords.setText("Remove Stopwords");
+
+        btnSearch.setText("Search");
+        btnSearch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSearchActionPerformed(evt);
+            }
+        });
+
+        jButton2.setText("Clear");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addComponent(jButton1)
-                .addContainerGap(283, Short.MAX_VALUE))
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jScrollPane1)
+                        .addContainerGap())
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jButton1)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel1)
+                                .addGap(20, 20, 20)
+                                .addComponent(txtfSearch)
+                                .addGap(63, 63, 63))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(chbStem)
+                                .addGap(18, 18, 18)
+                                .addComponent(chbStopwords)
+                                .addGap(111, 111, 111)))
+                        .addComponent(btnSearch)
+                        .addGap(34, 34, 34))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jButton1)
-                .addContainerGap(266, Short.MAX_VALUE))
+                .addGap(31, 31, 31)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel1)
+                    .addComponent(btnSearch))
+                .addGap(16, 16, 16)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(chbStem)
+                    .addComponent(chbStopwords))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jButton2)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -66,6 +140,36 @@ public class MainGUI extends javax.swing.JFrame {
             new Indexing(i).Run();
         }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void chbStemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chbStemActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_chbStemActionPerformed
+
+    private void btnSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSearchActionPerformed
+        String Keywords = txtfSearch.getText();
+        boolean statechbStem = chbStem.isSelected();
+        boolean statechbStopwords = chbStopwords.isSelected();
+
+        if (!statechbStem && !statechbStopwords) {
+            search.InitDatabase(0);
+        } else if (statechbStem) {
+            search.InitDatabase(1);
+        } else if (statechbStopwords) {
+            search.InitDatabase(2);
+        } else if (statechbStem && statechbStopwords) {
+            search.InitDatabase(3);
+        }
+        if (!search.InitDbCon()) {
+            txtArResults.setText("Database does not exists");
+            return;
+        }
+
+        txtArResults.setText(search.DbInfoOf(Keywords));
+    }//GEN-LAST:event_btnSearchActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        txtArResults.setText("");
+    }//GEN-LAST:event_jButton2ActionPerformed
 
     private static void printTime() {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -79,12 +183,12 @@ public class MainGUI extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        if (args[0].equals("debugging")) {
+        if (args[0].equals("debugindex")) {
             for (int i = 0; i < 4; i++) {
                 printTime();
                 new Indexing(i).Run();
                 printTime();
-            System.exit(-2);
+                System.exit(-2);
             }
             System.exit(-1);
         }
@@ -120,6 +224,14 @@ public class MainGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnSearch;
+    private javax.swing.JCheckBox chbStem;
+    private javax.swing.JCheckBox chbStopwords;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTextArea txtArResults;
+    private javax.swing.JTextField txtfSearch;
     // End of variables declaration//GEN-END:variables
 }

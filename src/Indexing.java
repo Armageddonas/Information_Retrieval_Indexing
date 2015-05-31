@@ -44,7 +44,7 @@ public class Indexing {
         String filenames[] = GetFileNames();
 
         for (int i = 0; i < filenames.length; i++) {
-        //for (int i = 0; i < 400; i++) {//debug
+            //for (int i = 0; i < 400; i++) {//debug
             System.out.println("Database: " + database + " Document " + (i + 1) + "\tof " + filenames.length);
             String doc = LoadDocument(collectionPath + filenames[i]);
             Collection_Document processedDoc = ProccessDocument(doc);
@@ -179,7 +179,8 @@ public class Indexing {
         for (int i = 0; i < lines.length; i++) {
 
             //<editor-fold defaultstate="collapsed" desc="Match text to Database">
-            String bookReferences = TextProcessing.SanitizeText(lines[i]);
+            String bookReferences = lines[i];
+            lines[i] = TextProcessing.SanitizeText(lines[i]);
 
             switch (database) {
                 case 0: {
@@ -207,7 +208,7 @@ public class Indexing {
             //</editor-fold>
 
             //<editor-fold defaultstate="collapsed" desc="Save words">
-            Matcher RgxGetWords = Pattern.compile("[a-zA-Z|0-9]+").matcher(bookReferences);
+            Matcher RgxGetWords = Pattern.compile("[a-zA-Z|0-9]+").matcher(lines[i]);
             while (RgxGetWords.find()) {
                 processed_doc.Words.add(RgxGetWords.group());
             }
@@ -276,7 +277,7 @@ public class Indexing {
                     //<editor-fold defaultstate="collapsed" desc="Check if word is in current document">
                     PreparedStatement stmWordInCurDoc = conn.prepareStatement(""
                             + "select Word.idWord from word, Document, WordInDoc WordInDoc "
-                            + "where WordInDoc.idDocument=Document.idDocument and WordInDoc.idWord and Word.idWord and Name=? and Document.idDocument=?");
+                            + "where WordInDoc.idDocument=Document.idDocument and WordInDoc.idWord=Word.idWord and Name=? and Document.idDocument=?");
 
                     stmWordInCurDoc.setString(1, processedDoc.Words.get(i));
                     stmWordInCurDoc.setInt(2, docID);

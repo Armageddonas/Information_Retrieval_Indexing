@@ -14,7 +14,7 @@ public class TextProcessing {
     private static StopwordRemover removeStopwords = new StopwordRemover();
 
     public static String SanitizeText(String Text) {
-        String temp = Text.replaceAll("\\p{Punct}+", " ");
+        String temp = Text.trim().replaceAll("\\p{Punct}+", " ");
 
         temp = temp.toLowerCase();
         return temp;
