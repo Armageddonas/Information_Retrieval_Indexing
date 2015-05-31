@@ -1,9 +1,13 @@
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
  *
  * @author Konstantinos Chasiotis
@@ -58,15 +62,30 @@ public class MainGUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-
+        for (int i = 0; i < 4; i++) {
+            new Indexing(i).Run();
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private static void printTime() {
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Date date = new Date();
+        System.out.println("---------------------------------------------------------------------");
+        System.out.println(dateFormat.format(date)); //2014/08/06 15:59:48
+        System.out.println("---------------------------------------------------------------------");
+    }
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
         if (args[0].equals("debugging")) {
-            new Indexing(0).Run();
+            for (int i = 0; i < 4; i++) {
+                printTime();
+                new Indexing(i).Run();
+                printTime();
+            System.exit(-2);
+            }
             System.exit(-1);
         }
         /* Set the Nimbus look and feel */

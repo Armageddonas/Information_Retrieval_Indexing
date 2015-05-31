@@ -24,12 +24,6 @@ public class Collection_Document {
     }
 
     public int CalcTF(String Word) {
-        int counter = 0;
-        for (String temp : Words) {
-            if (Word.equals(temp)) {
-                counter++;
-            }
-        }
-        return counter;
+        return java.util.Collections.frequency(Words, Word);
     }
 }

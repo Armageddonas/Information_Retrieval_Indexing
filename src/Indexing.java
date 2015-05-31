@@ -44,29 +44,23 @@ public class Indexing {
         String filenames[] = GetFileNames();
 
         for (int i = 0; i < filenames.length; i++) {
-            //for (int i = 2241; i < 2243; i++) {//debug
+        //for (int i = 0; i < 400; i++) {//debug
+            System.out.println("Database: " + database + " Document " + (i + 1) + "\tof " + filenames.length);
             String doc = LoadDocument(collectionPath + filenames[i]);
             Collection_Document processedDoc = ProccessDocument(doc);
             InsertDocumentToDB(processedDoc);
         }
 
-        System.exit(-5);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //System.exit(-5);//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         try {
             //<editor-fold defaultstate="collapsed" desc="Get doc insert id">
-            ResultSet res = conn.createStatement().executeQuery("select Name from Word");
-            while (res.next()) {
-                String temp = res.getString("Name");
+            //<editor-fold defaultstate="collapsed" desc="Update ctf,df">
+            PreparedStatement stmUpdateCTF = conn.prepareStatement("update Word set "
+                    + "ctf=(select sum(TF) from WordInDoc where WordInDoc.idWord=Word.idWord),"
+                    + "df=(select count(idWord) from WordInDoc where WordInDoc.idWord=Word.idWord);");
+            //stmUpdateCTF.setString(1, processedDoc.Title);
 
-                //<editor-fold defaultstate="collapsed" desc="Insert ctf,df">
-                PreparedStatement stmUpdateCTF = conn.prepareStatement("update Word set "
-                        + " ctf=(select sum(TF) from WordInDoc where WordInDoc.idWord=Word.idWord),"
-                        + "df=(select count(idWord) from WordInDoc where WordInDoc.idWord=Word.idWord);");
-                //stmUpdateCTF.setString(1, processedDoc.Title);
-
-                stmUpdateCTF.executeUpdate();
-                //</editor-fold>
-            }
-            res.close();
+            stmUpdateCTF.executeUpdate();
             //</editor-fold>
 
         } catch (SQLException ex) {
@@ -104,7 +98,8 @@ public class Indexing {
         try {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath + dbName + ".db");
-
+            //Gain speed
+            conn.prepareStatement("PRAGMA synchronous=OFF;").execute();
             //<editor-fold defaultstate="collapsed" desc="Create tables">
             Statement stat = conn.createStatement();
             stat.execute("  CREATE TABLE Word (\n"
@@ -165,27 +160,6 @@ public class Indexing {
         return document;
     }
 
-    private String LoadQuery() {
-
-        ArrayList<Integer> relDocs = new ArrayList();
-        String query = "";
-        try {
-
-            BufferedReader in = new BufferedReader(new FileReader(dbPath + "QueryDb.sql"));
-            String line;
-            while ((line = in.readLine()) != null) {
-                query += line + "\n";
-
-            }
-            in.close();
-        } catch (IOException ex) {
-            Logger.getLogger(Indexing.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-        //System.out.println(document);
-        return query;
-    }
-
     private Collection_Document ProccessDocument(String doc) {
         Collection_Document processed_doc = new Collection_Document();
         String insidePreText = null;
@@ -208,15 +182,26 @@ public class Indexing {
             String bookReferences = TextProcessing.SanitizeText(lines[i]);
 
             switch (database) {
+                case 0: {
+                    break;
+                }
                 case 1: {
                     lines[i] = TextProcessing.Stemmer(lines[i]);
+                    break;
                 }
                 case 2: {
                     lines[i] = TextProcessing.RemoveStopwords(lines[i]);
+                    break;
                 }
                 case 3: {
                     lines[i] = TextProcessing.RemoveStopwords(lines[i]);
                     lines[i] = TextProcessing.Stemmer(lines[i]);
+                    break;
+                }
+                default: {
+                    System.out.println("Wrong database number");
+                    System.exit(-3);
+                    break;
                 }
             }
             //</editor-fold>
@@ -237,7 +222,7 @@ public class Indexing {
         }
         //</editor-fold>
         //System.out.println("The content is:\n" + extractPre.group(1) + "\n------------------------------------------------------");
-        System.out.println(processed_doc.toString());
+        //System.out.println(processed_doc.toString());
         return processed_doc;
     }
 
@@ -299,8 +284,7 @@ public class Indexing {
                     if (rtsWordInCurDoc.next() == true) {
                         continue;
                     }
-                    //</editor-fold>  
-
+                    //</editor-fold> 
                     //System.out.println("Dublicate: " + processedDoc.Words.get(i));
                     wordID = rtsWordInDB.getInt("idWord");
                 }
