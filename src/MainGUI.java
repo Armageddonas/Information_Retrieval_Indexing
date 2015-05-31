@@ -201,6 +201,7 @@ public class MainGUI extends javax.swing.JFrame {
         }
 
         txtArResults.setText(search.DbInfoOf(Keywords));
+        txtArResults.setCaretPosition(0);
     }//GEN-LAST:event_btnSearchActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed

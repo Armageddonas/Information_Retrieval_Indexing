@@ -119,9 +119,10 @@ public class Indexing {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath + dbName + ".db");
             //Gain speed
-            //conn.prepareStatement("PRAGMA synchronous=OFF;").execute();
-            conn.prepareStatement("PRAGMA journal_mode = MEMORY;").execute();
-            //conn.commit();
+            conn.prepareStatement("PRAGMA synchronous=OFF;").execute();
+            //conn.createStatement().execute("Begin PRAGMA journal_mode = MEMORY END");
+            //conn.createStatement().execute("commit")
+            
             //<editor-fold defaultstate="collapsed" desc="Create tables">
             Statement stat = conn.createStatement();
             stat.execute("  CREATE TABLE Word (\n"
@@ -247,7 +248,8 @@ public class Indexing {
             //</editor-fold>
 
                 //<editor-fold defaultstate="collapsed" desc="Save words">
-                Matcher RgxGetWords = Pattern.compile("[A-Za-z|0-9]+").matcher(lines[i]);
+                //Matcher RgxGetWords = Pattern.compile("[A-Za-z|0-9]+").matcher(lines[i]);
+                Matcher RgxGetWords = Pattern.compile("[A-Za-z]+").matcher(lines[i]);
                 while (RgxGetWords.find()) {
                     processed_doc.Words.add(RgxGetWords.group());
                 }

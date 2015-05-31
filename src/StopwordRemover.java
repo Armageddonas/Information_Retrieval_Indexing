@@ -49,7 +49,7 @@ public class StopwordRemover {
                 //</editor-fold>
             }
 
-            return sanitizedText;
+            return sanitizedText.trim();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(StopwordRemover.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
